@@ -1,0 +1,175 @@
+<section class="w-75 mx-auto py-2">
+  <!-- Title -->
+  <div class="title text-center">
+    <h1 class="fw-bold fs-3">My Todo App</h1>
+    <p class="fs-6 sub-color">Stay organized and productive</p>
+    <div class="d-flex justify-content-center sub-color">
+      <span class="dot d-flex align-items-center"
+        >{{ computedTasks() }} completed</span
+      >
+      <span>{{ totalTasks() }} total tasks</span>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div
+    class="add-task rounded-3 text-center mx-auto my-3 bg-white special-border p-3"
+  >
+    <div class="d-flex">
+      <input
+        class="form-control"
+        [(ngModel)]="newTaskTitle"
+        placeholder="Add a new task..."
+        type="text"
+      />
+      <button (click)="addTask()" class="btn text-white mx-1" [disabled]="newTaskTitle.trim().length === 0">
+        <span class="me-2">+</span>Add
+      </button>
+    </div>
+    <div class="d-flex my-3">
+      <div class="d-flex align-items-center me-2">
+        <label for="Category">Category</label>
+        <select
+          class="form-select ms-1"
+          [(ngModel)]="selectedCategory"
+          id="Category"
+        >
+          <option value="personal">Personal</option>
+          <option value="work">Work</option>
+          <option value="shopping">Shopping</option>
+          <option value="health">Health</option>
+        </select>
+      </div>
+      <div class="d-flex align-items-center">
+        <label for="Priority">Priority</label>
+        <select
+          class="form-select ms-1"
+          [(ngModel)]="selectedPriority"
+          id="Priority"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search mx-auto d-flex align-items-center gap-2">
+    <div class="position-relative w-100">
+      <input
+        [(ngModel)]="searchText"
+        class="form-control ps-5"
+        placeholder="Search tasks..."
+        type="text"
+      />
+      <span><i class="fa fa-search search-icon"></i></span>
+    </div>
+    <span><i class="fa-solid fa-filter fa-sm"></i></span>
+    <select class="form-select" [(ngModel)]="selectedFilter">
+      <option value="all">All categories</option>
+      <option value="personal">Personal</option>
+      <option value="work">Work</option>
+      <option value="shopping">Shopping</option>
+      <option value="health">Health</option>
+    </select>
+  </div>
+
+  <!-- Tasks -->
+  <div class="tasks mx-auto my-3">
+    @for (item of filteredTodos(); track item.id) {
+      <div
+        class="task bg-white special-border rounded-3 d-flex justify-content-between align-items-center px-3 py-4 my-2"
+      >
+        <div class="d-flex align-items-center w-100">
+          <input
+            class="form-check"
+            (change)="updateStat()"
+            [(ngModel)]="item.completed"
+            type="checkbox"
+          />
+          <div class="ms-3 flex-grow-1" [class.completed-task]="item.completed">
+            @if (editingTaskId() === item.id) {
+              <div class="d-flex justify-content-between align-items-center">
+                <input
+                  (keyup.enter)="saveEdit()"
+                  class="form-control edit-input"
+                  [(ngModel)]="item.title"
+                  autofocus
+                  type="text"
+                />
+                <div class="d-flex ms-2">
+                  <span class="cursor-pointer fs-4" (click)="saveEdit()"
+                    ><i class="fa-solid fa-square-check"></i
+                  ></span>
+                  <span class="cursor-pointer fs-4" (click)="cancelEdit(item)"
+                    ><i class="fa-solid fa-square-xmark"></i
+                  ></span>
+                </div>
+              </div>
+            } @else {
+              <div class="d-flex justify-content-between align-items-center">
+                <p
+                  class="mb-0 fs-7"
+                  [class.text-decoration-line-through]="item.completed"
+                >
+                  {{ item.title }}
+                </p>
+                <div class="fs-8 d-flex gap-3">
+                  <span class="cursor-pointer" (click)="startEdit(item)"
+                    ><i class="fa-solid fa-pen"></i
+                  ></span>
+                  <span class="cursor-pointer" (click)="deleteTask(item.id)"
+                    ><i class="fa-solid fa-xmark text-danger"></i
+                  ></span>
+                </div>
+              </div>
+              <div class="fs-8 d-flex gap-2 fw-medium mt-2">
+                <span class="cat">{{ item.category }}</span>
+                <span class="pri" [class.high]="item.priority === 'high'"
+                [class.low]="item.priority === 'low'"
+                [class.med]="item.priority === 'medium'"
+                >{{ item.priority }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <!-- not found -->
+  @if (!todoList().length || !filteredTodos().length) {
+    <div
+      class="not-found mx-auto my-3 bg-white p-3 rounded-3 special-border text-center"
+    >
+      <span
+        class="check-circle d-flex justify-content-center align-items-center m-auto"
+        ><i class="fa-solid fa-check"></i
+      ></span>
+      <h5 class="mt-2 text-muted fs-6 fw-normal">No tasks found</h5>
+      <p class="text-muted fs-8 fw-normal">
+        Add your first task to get started!
+      </p>
+    </div>
+  }
+  <!-- Progress -->
+  @if (todoList().length) {
+    <div class="progress-line mx-auto bg-white p-3 rounded-3 special-border">
+      <div class="d-flex justify-content-between align-items-center fs-8">
+        <p>Progress</p>
+        <span>{{ progressPercent() | number: "1.0-0" }}%</span>
+      </div>
+      <div class="progress">
+        <div
+          class="progress-bar"
+          role="progressbar"
+          [style.width.%]="progressPercent()"
+          [attr.aria-valuenow]="progressPercent()"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        ></div>
+      </div>
+    </div>
+  }
+</section>
